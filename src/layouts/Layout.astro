@@ -1,0 +1,95 @@
+---
+const { title = "Luyện thi IELTS · TOEIC" } = Astro.props;
+---
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style is:global>
+    :root {
+      --bg: #F6F7F4;
+      --card-bg: #FFFFFF;
+      --ink: #1B2A4A;
+      --ink-soft: #56607A;
+      --border: #E1E4E8;
+      --gold: #E2A63B;
+      --gold-soft: #FBF0DA;
+      --teal: #2F9E82;
+      --teal-soft: #E4F4EF;
+      --red: #D6555B;
+      --red-soft: #FBE7E8;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', -apple-system, sans-serif;
+      line-height: 1.55;
+    }
+    h1, h2, h3 { font-family: 'Literata', Georgia, serif; margin: 0 0 .4em; letter-spacing: -0.01em; }
+    a { color: inherit; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+    header.site {
+      border-bottom: 1px solid var(--border);
+      background: var(--card-bg);
+    }
+    header.site .wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 16px;
+      padding-bottom: 16px;
+    }
+    .brand { font-family: 'Literata', serif; font-weight: 600; font-size: 1.15rem; text-decoration: none; }
+    .badge-row { display: flex; gap: 10px; font-size: 0.9rem; }
+    .badge {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--gold-soft); color: #8A6412;
+      padding: 5px 11px; border-radius: 999px; font-weight: 600;
+    }
+    .badge.streak { background: var(--teal-soft); color: #1E6E58; }
+    main { padding: 40px 0 80px; }
+    footer.site { border-top: 1px solid var(--border); padding: 24px 0; color: var(--ink-soft); font-size: 0.85rem; }
+    button {
+      font-family: inherit; font-size: 1rem; font-weight: 600;
+      cursor: pointer; border: none; border-radius: var(--radius);
+      padding: 12px 22px;
+    }
+    .btn-primary { background: var(--ink); color: white; }
+    .btn-primary:hover { background: #142038; }
+    .btn-primary:disabled { background: #B8BFCC; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <header class="site">
+    <div class="wrap">
+      <a class="brand" href="/">Luyện thi IELTS · TOEIC</a>
+      <div class="badge-row" id="header-badges"></div>
+    </div>
+  </header>
+  <main class="wrap">
+    <slot />
+  </main>
+  <footer class="site">
+    <div class="wrap">Bản MVP — dữ liệu XP/streak đang lưu tạm trên trình duyệt này.</div>
+  </footer>
+  <script>
+    function renderBadges() {
+      const el = document.getElementById('header-badges');
+      if (!el) return;
+      const data = JSON.parse(localStorage.getItem('luyenthi_progress') || '{"xp":0,"streak":0}');
+      el.innerHTML =
+        '<span class="badge">⭐ ' + data.xp + ' XP</span>' +
+        '<span class="badge streak">🔥 ' + data.streak + ' ngày</span>';
+    }
+    renderBadges();
+  </script>
+</body>
+</html>

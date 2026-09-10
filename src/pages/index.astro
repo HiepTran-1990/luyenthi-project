@@ -1,0 +1,22 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const allQuestions = await getCollection('cauhoi');
+const soCauIelts = allQuestions.filter(q => q.data.de_thi === 'ielts').length;
+const soCauToeic = allQuestions.filter(q => q.data.de_thi === 'toeic').length;
+---
+<Layout title="Luyện thi IELTS · TOEIC — Học mỗi ngày, có thưởng">
+  <section style="padding: 20px 0 8px;">
+    <h1 style="font-size: 2.1rem; max-width: 12ch;">Học mỗi ngày một chút, giữ chuỗi streak, lên điểm dần.</h1>
+    <p style="color: var(--ink-soft); font-size: 1.05rem; max-width: 52ch;">
+      Làm bài thi thử IELTS &amp; TOEIC ngắn mỗi ngày. Mỗi câu đúng cộng điểm thưởng (XP),
+      mỗi ngày học liên tục giữ chuỗi (streak) — giống cách Duolingo tạo động lực học ngoại ngữ.
+    </p>
+    <a href="/quiz"><button class="btn-primary">Bắt đầu làm đề thử</button></a>
+    <p style="margin-top: 28px; color: var(--ink-soft); font-size: 0.9rem;">
+      Ngân hàng câu hỏi hiện có: {soCauIelts} câu IELTS · {soCauToeic} câu TOEIC.
+      Đây là bản MVP — số lượng câu hỏi sẽ tăng dần qua CMS quản trị.
+    </p>
+  </section>
+</Layout>

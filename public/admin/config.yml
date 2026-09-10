@@ -1,0 +1,43 @@
+backend:
+  name: github
+  repo: HiepTran-1990/luyenthi-project   # ⚠️ đổi thành tên repo GitHub thật của bạn
+  branch: main
+
+media_folder: "public/images/uploads"
+public_folder: "/images/uploads"
+
+collections:
+  - name: "cauhoi"
+    label: "Ngân hàng câu hỏi"
+    folder: "src/content/cauhoi"
+    create: true
+    slug: "{{slug}}"
+    format: "frontmatter"
+    fields:
+      - label: "Đề thi"
+        name: "de_thi"
+        widget: "select"
+        options:
+          - { label: "IELTS", value: "ielts" }
+          - { label: "TOEIC", value: "toeic" }
+      - label: "Kỹ năng"
+        name: "ky_nang"
+        widget: "select"
+        options:
+          - { label: "Reading", value: "reading" }
+          - { label: "Listening", value: "listening" }
+      - label: "Độ khó"
+        name: "do_kho"
+        widget: "select"
+        options:
+          - { label: "Dễ", value: "de" }
+          - { label: "Trung bình", value: "trungbinh" }
+          - { label: "Khó", value: "kho" }
+      - { label: "Nội dung câu hỏi", name: "cau_hoi", widget: "text" }
+      - label: "4 lựa chọn (theo đúng thứ tự A, B, C, D)"
+        name: "lua_chon"
+        widget: "list"
+        min: 4
+        max: 4
+      - { label: "Đáp án đúng (0=A, 1=B, 2=C, 3=D)", name: "dap_an_dung", widget: "number", min: 0, max: 3 }
+      - { label: "Giải thích đáp án", name: "giai_thich", widget: "text", required: false }
