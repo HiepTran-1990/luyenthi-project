@@ -3,9 +3,10 @@ import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 
 const raw = await getCollection('cauhoi');
-// MVP: lấy tối đa 8 câu ngẫu nhiên cho 1 lượt làm bài
-const shuffled = [...raw].sort(() => Math.random() - 0.5).slice(0, 8);
-const questions = shuffled.map(q => ({
+// Truyền TOÀN BỘ câu hỏi sang client — việc lọc theo đề thi/kỹ năng
+// và giới hạn số câu (luyện nhanh 8 câu / mock test 20 câu) do JS xử lý
+// lúc trang chạy, dựa trên tham số trên URL (?de=...&ky=...&mode=...).
+const allQuestions = raw.map(q => ({
   de_thi: q.data.de_thi,
   ky_nang: q.data.ky_nang,
   cau_hoi: q.data.cau_hoi,
@@ -52,7 +53,20 @@ const questions = shuffled.map(q => ({
     .result-card .score { font-family: 'Literata', serif; font-size: 2.4rem; margin: 6px 0; }
   </style>
 
-  <script define:vars={{ questions }}>
+  <script define:vars={{ allQuestions }}>
+    // Đọc bộ lọc từ URL, ví dụ /quiz?de=ielts&ky=grammar&mode=mock
+    const params = new URLSearchParams(window.location.search);
+    const filterDeThi = params.get('de') || 'all';   // 'ielts' | 'toeic' | 'all'
+    const filterKyNang = params.get('ky') || 'all';  // 'reading' | 'grammar' | 'listening' | 'all'
+    const mode = params.get('mode') || 'quick';      // 'quick' (8 câu) | 'mock' (20 câu)
+
+    let pool = allQuestions.filter(q =>
+      (filterDeThi === 'all' || q.de_thi === filterDeThi) &&
+      (filterKyNang === 'all' || q.ky_nang === filterKyNang)
+    );
+    const soCauMoiLuot = mode === 'mock' ? 20 : 8;
+    const questions = [...pool].sort(() => Math.random() - 0.5).slice(0, soCauMoiLuot);
+
     let current = 0;
     let score = 0;
     let answered = false;
@@ -72,7 +86,8 @@ const questions = shuffled.map(q => ({
       answered = false;
       picked = null;
       const q = questions[current];
-      elTag.textContent = (q.de_thi === 'ielts' ? 'IELTS' : 'TOEIC') + ' · ' + (q.ky_nang === 'reading' ? 'Reading' : 'Listening');
+      const nhanKyNang = q.ky_nang === 'reading' ? 'Reading' : q.ky_nang === 'grammar' ? 'Grammar' : 'Listening';
+      elTag.textContent = (q.de_thi === 'ielts' ? 'IELTS' : 'TOEIC') + ' · ' + nhanKyNang;
       elText.textContent = q.cau_hoi;
       elOptions.innerHTML = '';
       q.lua_chon.forEach((opt, i) => {
@@ -158,7 +173,9 @@ const questions = shuffled.map(q => ({
     elAction.addEventListener('click', checkAnswer);
 
     if (questions.length === 0) {
-      elCard.innerHTML = '<p>Chưa có câu hỏi nào trong ngân hàng đề. Hãy thêm câu hỏi qua trang quản trị /admin.</p>';
+      elCard.innerHTML = pool.length === 0
+        ? '<p>Chưa có câu hỏi nào phù hợp với bộ lọc này. Hãy thử bộ lọc khác, hoặc thêm câu hỏi qua trang quản trị /admin.</p>'
+        : '<p>Chưa có câu hỏi nào trong ngân hàng đề. Hãy thêm câu hỏi qua trang quản trị /admin.</p>';
     } else {
       renderQuestion();
     }

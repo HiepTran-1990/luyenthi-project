@@ -5,18 +5,86 @@ import { getCollection } from 'astro:content';
 const allQuestions = await getCollection('cauhoi');
 const soCauIelts = allQuestions.filter(q => q.data.de_thi === 'ielts').length;
 const soCauToeic = allQuestions.filter(q => q.data.de_thi === 'toeic').length;
+const soCauReading = allQuestions.filter(q => q.data.ky_nang === 'reading').length;
+const soCauGrammar = allQuestions.filter(q => q.data.ky_nang === 'grammar').length;
+const soCauListening = allQuestions.filter(q => q.data.ky_nang === 'listening').length;
 ---
 <Layout title="Luyện thi IELTS · TOEIC — Học mỗi ngày, có thưởng">
   <section style="padding: 20px 0 8px;">
-    <h1 style="font-size: 2.1rem; max-width: 12ch;">Học mỗi ngày một chút, giữ chuỗi streak, lên điểm dần.</h1>
+    <h1 style="font-size: 2.1rem; max-width: 14ch;">Học mỗi ngày một chút, giữ chuỗi streak, lên điểm dần.</h1>
     <p style="color: var(--ink-soft); font-size: 1.05rem; max-width: 52ch;">
       Làm bài thi thử IELTS &amp; TOEIC ngắn mỗi ngày. Mỗi câu đúng cộng điểm thưởng (XP),
       mỗi ngày học liên tục giữ chuỗi (streak) — giống cách Duolingo tạo động lực học ngoại ngữ.
     </p>
-    <a href="/quiz"><button class="btn-primary">Bắt đầu làm đề thử</button></a>
+
+    <div class="select-card">
+      <div class="select-row">
+        <label for="sel-de">Đề thi</label>
+        <select id="sel-de">
+          <option value="all">Tất cả</option>
+          <option value="ielts">IELTS</option>
+          <option value="toeic">TOEIC</option>
+        </select>
+      </div>
+      <div class="select-row">
+        <label for="sel-ky">Kỹ năng</label>
+        <select id="sel-ky">
+          <option value="all">Tất cả</option>
+          <option value="reading">Reading</option>
+          <option value="grammar">Grammar</option>
+          <option value="listening">Listening</option>
+        </select>
+      </div>
+      <div class="select-row">
+        <label>Chế độ</label>
+        <div class="mode-toggle">
+          <button type="button" class="mode-btn active" data-mode="quick">Luyện tập nhanh · 8 câu</button>
+          <button type="button" class="mode-btn" data-mode="mock">Mock Test · 20 câu</button>
+        </div>
+      </div>
+      <button class="btn-primary" id="btn-start" style="width: 100%; margin-top: 4px;">Bắt đầu làm bài</button>
+    </div>
+
     <p style="margin-top: 28px; color: var(--ink-soft); font-size: 0.9rem;">
-      Ngân hàng câu hỏi hiện có: {soCauIelts} câu IELTS · {soCauToeic} câu TOEIC.
+      Ngân hàng câu hỏi hiện có: {soCauIelts} câu IELTS · {soCauToeic} câu TOEIC
+      &nbsp;—&nbsp; {soCauReading} Reading · {soCauGrammar} Grammar · {soCauListening} Listening.
       Đây là bản MVP — số lượng câu hỏi sẽ tăng dần qua CMS quản trị.
     </p>
   </section>
+
+  <style is:global>
+    .select-card {
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 22px; margin-top: 24px; max-width: 420px;
+    }
+    .select-row { margin-bottom: 16px; }
+    .select-row label { display: block; font-size: .85rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 6px; }
+    .select-row select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+      font-family: inherit; font-size: .95rem; background: white; color: var(--ink);
+    }
+    .mode-toggle { display: flex; gap: 8px; }
+    .mode-btn {
+      flex: 1; padding: 10px 8px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: white; color: var(--ink-soft); font-size: .85rem; font-weight: 600; cursor: pointer;
+    }
+    .mode-btn.active { border-color: var(--ink); background: var(--ink); color: white; }
+  </style>
+
+  <script>
+    let mode = 'quick';
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        mode = btn.dataset.mode;
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    document.getElementById('btn-start').addEventListener('click', () => {
+      const de = document.getElementById('sel-de').value;
+      const ky = document.getElementById('sel-ky').value;
+      window.location.href = `/quiz?de=${de}&ky=${ky}&mode=${mode}`;
+    });
+  </script>
 </Layout>

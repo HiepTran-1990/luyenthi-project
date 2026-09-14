@@ -4,7 +4,7 @@ const cauhoi = defineCollection({
   type: 'content',
   schema: z.object({
     de_thi: z.enum(['ielts', 'toeic']),
-    ky_nang: z.enum(['listening', 'reading']),
+    ky_nang: z.enum(['listening', 'reading', 'grammar']),
     do_kho: z.enum(['de', 'trungbinh', 'kho']),
     cau_hoi: z.string(),
     lua_chon: z.array(z.string()).length(4),

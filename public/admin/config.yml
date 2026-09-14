@@ -25,6 +25,7 @@ collections:
         widget: "select"
         options:
           - { label: "Reading", value: "reading" }
+          - { label: "Grammar", value: "grammar" }
           - { label: "Listening", value: "listening" }
       - label: "Độ khó"
         name: "do_kho"
