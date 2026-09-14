@@ -3,11 +3,13 @@ import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 
 const allQuestions = await getCollection('cauhoi');
+const allPassages = await getCollection('baidoc');
 const soCauIelts = allQuestions.filter(q => q.data.de_thi === 'ielts').length;
 const soCauToeic = allQuestions.filter(q => q.data.de_thi === 'toeic').length;
 const soCauReading = allQuestions.filter(q => q.data.ky_nang === 'reading').length;
 const soCauGrammar = allQuestions.filter(q => q.data.ky_nang === 'grammar').length;
 const soCauListening = allQuestions.filter(q => q.data.ky_nang === 'listening').length;
+const soBaiDoc = allPassages.length;
 ---
 <Layout title="Luyện thi IELTS · TOEIC — Học mỗi ngày, có thưởng">
   <section style="padding: 20px 0 8px;">
@@ -50,6 +52,23 @@ const soCauListening = allQuestions.filter(q => q.data.ky_nang === 'listening').
       &nbsp;—&nbsp; {soCauReading} Reading · {soCauGrammar} Grammar · {soCauListening} Listening.
       Đây là bản MVP — số lượng câu hỏi sẽ tăng dần qua CMS quản trị.
     </p>
+
+    <div class="select-card" style="margin-top: 20px;">
+      <h3 style="margin: 0 0 4px;">Luyện đọc hiểu (Reading Passage)</h3>
+      <p style="color: var(--ink-soft); font-size: .88rem; margin: 0 0 16px;">
+        Đọc một đoạn văn dài, trả lời bộ câu hỏi gắn theo đúng đoạn đó — đúng cấu trúc IELTS Reading thật,
+        thay vì các câu hỏi rời rạc. Hiện có {soBaiDoc} bài đọc.
+      </p>
+      <div class="select-row">
+        <label for="sel-de-doc">Đề thi</label>
+        <select id="sel-de-doc">
+          <option value="all">Tất cả</option>
+          <option value="ielts">IELTS</option>
+          <option value="toeic">TOEIC</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="btn-start-doc" style="width: 100%; margin-top: 4px;">Đọc và trả lời</button>
+    </div>
   </section>
 
   <style is:global>
@@ -85,6 +104,11 @@ const soCauListening = allQuestions.filter(q => q.data.ky_nang === 'listening').
       const de = document.getElementById('sel-de').value;
       const ky = document.getElementById('sel-ky').value;
       window.location.href = `/quiz?de=${de}&ky=${ky}&mode=${mode}`;
+    });
+
+    document.getElementById('btn-start-doc').addEventListener('click', () => {
+      const de = document.getElementById('sel-de-doc').value;
+      window.location.href = `/doc-hieu?de=${de}`;
     });
   </script>
 </Layout>

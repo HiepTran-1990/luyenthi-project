@@ -7,10 +7,22 @@ const cauhoi = defineCollection({
     ky_nang: z.enum(['listening', 'reading', 'grammar']),
     do_kho: z.enum(['de', 'trungbinh', 'kho']),
     cau_hoi: z.string(),
-    lua_chon: z.array(z.string()).length(4),
-    dap_an_dung: z.number().min(0).max(3), // chỉ số 0=A, 1=B, 2=C, 3=D
+    // 2-4 lựa chọn: MCQ thường dùng 4, True/False/Not Given dùng 3
+    lua_chon: z.array(z.string()).min(2).max(4),
+    dap_an_dung: z.number().min(0).max(3), // chỉ số 0=A, 1=B, 2=C...
     giai_thich: z.string().optional(),
+    // Slug của bài đọc liên quan (để trống = câu hỏi độc lập, vd TOEIC Part 5)
+    bai_doc: z.string().optional(),
   }),
 });
 
-export const collections = { cauhoi };
+const baidoc = defineCollection({
+  type: 'content',
+  schema: z.object({
+    de_thi: z.enum(['ielts', 'toeic']),
+    tieu_de: z.string(),
+    do_kho: z.enum(['de', 'trungbinh', 'kho']),
+  }),
+});
+
+export const collections = { cauhoi, baidoc };

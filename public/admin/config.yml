@@ -7,6 +7,29 @@ media_folder: "public/images/uploads"
 public_folder: "/images/uploads"
 
 collections:
+  - name: "baidoc"
+    label: "Bài đọc (đoạn văn dài)"
+    folder: "src/content/baidoc"
+    create: true
+    slug: "{{slug}}"
+    format: "frontmatter"
+    fields:
+      - label: "Đề thi"
+        name: "de_thi"
+        widget: "select"
+        options:
+          - { label: "IELTS", value: "ielts" }
+          - { label: "TOEIC", value: "toeic" }
+      - { label: "Tiêu đề bài đọc", name: "tieu_de", widget: "string" }
+      - label: "Độ khó"
+        name: "do_kho"
+        widget: "select"
+        options:
+          - { label: "Dễ", value: "de" }
+          - { label: "Trung bình", value: "trungbinh" }
+          - { label: "Khó", value: "kho" }
+      - { label: "Nội dung bài đọc (đoạn văn đầy đủ)", name: "body", widget: "markdown" }
+
   - name: "cauhoi"
     label: "Ngân hàng câu hỏi"
     folder: "src/content/cauhoi"
@@ -34,11 +57,19 @@ collections:
           - { label: "Dễ", value: "de" }
           - { label: "Trung bình", value: "trungbinh" }
           - { label: "Khó", value: "kho" }
+      - label: "Bài đọc liên quan (để trống nếu là câu hỏi độc lập, ví dụ TOEIC Part 5 ngữ pháp)"
+        name: "bai_doc"
+        widget: "relation"
+        collection: "baidoc"
+        search_fields: ["tieu_de"]
+        value_field: "{{slug}}"
+        display_fields: ["tieu_de"]
+        required: false
       - { label: "Nội dung câu hỏi", name: "cau_hoi", widget: "text" }
-      - label: "4 lựa chọn (theo đúng thứ tự A, B, C, D)"
+      - label: "Lựa chọn (2-4, theo thứ tự A, B, C, D — dùng đúng 3 dòng 'True/False/Not Given' cho dạng đó)"
         name: "lua_chon"
         widget: "list"
-        min: 4
+        min: 2
         max: 4
       - { label: "Đáp án đúng (0=A, 1=B, 2=C, 3=D)", name: "dap_an_dung", widget: "number", min: 0, max: 3 }
       - { label: "Giải thích đáp án", name: "giai_thich", widget: "text", required: false }
