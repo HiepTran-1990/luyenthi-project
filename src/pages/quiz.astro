@@ -3,17 +3,19 @@ import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 
 const raw = await getCollection('cauhoi');
-// Truyền TOÀN BỘ câu hỏi sang client — việc lọc theo đề thi/kỹ năng
-// và giới hạn số câu (luyện nhanh 8 câu / mock test 20 câu) do JS xử lý
-// lúc trang chạy, dựa trên tham số trên URL (?de=...&ky=...&mode=...).
-const allQuestions = raw.map(q => ({
-  de_thi: q.data.de_thi,
-  ky_nang: q.data.ky_nang,
-  cau_hoi: q.data.cau_hoi,
-  lua_chon: q.data.lua_chon,
-  dap_an_dung: q.data.dap_an_dung,
-  giai_thich: q.data.giai_thich || '',
-}));
+// Loại các câu hỏi thuộc một bài đọc cụ thể (bai_doc có giá trị) ra khỏi
+// pool ngẫu nhiên ở đây — chúng chỉ nên xuất hiện trong /doc-hieu, đi kèm
+// đúng đoạn văn của nó, không thì người làm bài sẽ không có ngữ cảnh để trả lời.
+const allQuestions = raw
+  .filter(q => !q.data.bai_doc)
+  .map(q => ({
+    de_thi: q.data.de_thi,
+    ky_nang: q.data.ky_nang,
+    cau_hoi: q.data.cau_hoi,
+    lua_chon: q.data.lua_chon,
+    dap_an_dung: q.data.dap_an_dung,
+    giai_thich: q.data.giai_thich || '',
+  }));
 ---
 <Layout title="Làm đề thử — Luyện thi IELTS · TOEIC">
   <div id="quiz-app">
@@ -86,7 +88,9 @@ const allQuestions = raw.map(q => ({
       answered = false;
       picked = null;
       const q = questions[current];
-      const nhanKyNang = q.ky_nang === 'reading' ? 'Reading' : q.ky_nang === 'grammar' ? 'Grammar' : 'Listening';
+      const nhanKyNang = q.ky_nang === 'reading'
+        ? (q.de_thi === 'ielts' ? 'Từ vựng' : 'Reading')
+        : q.ky_nang === 'grammar' ? 'Grammar' : 'Listening';
       elTag.textContent = (q.de_thi === 'ielts' ? 'IELTS' : 'TOEIC') + ' · ' + nhanKyNang;
       elText.textContent = q.cau_hoi;
       elOptions.innerHTML = '';
