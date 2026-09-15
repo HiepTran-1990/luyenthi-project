@@ -1,0 +1,210 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const lessons = await getCollection('nguphap');
+  return lessons.map(l => ({
+    params: { slug: l.slug },
+    props: { lesson: l },
+  }));
+}
+
+const { lesson } = Astro.props;
+const rawQuestions = await getCollection('cauhoi');
+const exercises = rawQuestions
+  .filter(q => q.data.bai_hoc_ngu_phap === lesson.slug)
+  .map(q => ({
+    cau_hoi: q.data.cau_hoi,
+    lua_chon: q.data.lua_chon,
+    dap_an_dung: q.data.dap_an_dung,
+    giai_thich: q.data.giai_thich || '',
+  }));
+
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+const noiDungHtml = lesson.body
+  .split(/\n\s*\n/)
+  .map(doan => {
+    const t = doan.trim();
+    if (t.startsWith('## ')) return `<h3>${escapeHtml(t.slice(3))}</h3>`;
+    if (t.startsWith('**') && t.endsWith('**') && t.indexOf('**', 2) === t.length - 2) {
+      return `<p><strong>${escapeHtml(t.slice(2, -2))}</strong></p>`;
+    }
+    // In đậm các đoạn **...** nằm giữa câu
+    const withBold = escapeHtml(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // In nghiêng các đoạn *...* (ví dụ câu mẫu tiếng Anh)
+    const withItalic = withBold.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    return `<p>${withItalic}</p>`;
+  })
+  .join('');
+---
+<Layout title={lesson.data.tieu_de + ' — Ngữ pháp'}>
+  <a href="/ngu-phap" style="color: var(--ink-soft); font-size: .85rem; text-decoration: none;">← Tất cả chủ điểm</a>
+
+  <div class="passage-card" style="margin-top: 12px;">
+    <h2 style="margin-top: 0;">{lesson.data.tieu_de}</h2>
+    <div class="passage-body" style="max-height: none;" set:html={noiDungHtml} />
+  </div>
+
+  <div id="exercise-app" style="margin-top: 24px;">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <p class="progress-label" id="progress-label"></p>
+
+    <div class="q-card" id="q-card" hidden>
+      <span class="q-tag" id="q-tag"></span>
+      <h3 id="q-text"></h3>
+      <div id="q-options"></div>
+      <p id="q-explain" class="explain" hidden></p>
+      <button class="btn-primary" id="q-action" disabled>Kiểm tra đáp án</button>
+    </div>
+
+    <div id="empty-state" hidden></div>
+    <div id="q-result" hidden></div>
+  </div>
+
+  <style is:global>
+    .progress-track { height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; margin-bottom: 8px; }
+    .progress-fill { height: 100%; background: var(--teal); width: 0%; transition: width .25s ease; }
+    .progress-label { color: var(--ink-soft); font-size: .85rem; margin: 0 0 20px; }
+    .passage-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; }
+    .passage-body { font-size: 1rem; line-height: 1.75; color: var(--ink); }
+    .passage-body h3 { font-family: 'Literata', serif; margin: 20px 0 8px; }
+    .passage-body h3:first-child { margin-top: 0; }
+    .passage-body p { margin: 0 0 12px; }
+    .q-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; }
+    .q-tag { display: inline-block; background: var(--gold-soft); color: #8A6412; font-size: .75rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+    #q-text { font-size: 1.1rem; margin: 14px 0 20px; }
+    .option {
+      display: block; width: 100%; text-align: left;
+      background: white; border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 13px 16px; margin-bottom: 10px; font-size: .98rem; font-family: inherit;
+      cursor: pointer; color: var(--ink);
+    }
+    .option:hover { border-color: var(--ink); }
+    .option.selected { border-color: var(--ink); border-width: 2px; }
+    .option.correct { background: var(--teal-soft); border-color: var(--teal); }
+    .option.incorrect { background: var(--red-soft); border-color: var(--red); }
+    .explain { background: var(--gold-soft); border-radius: var(--radius); padding: 14px 16px; font-size: .92rem; margin: 10px 0 18px; color: #5C4813; }
+    .result-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; text-align: center; }
+    .result-card .score { font-family: 'Literata', serif; font-size: 2.4rem; margin: 6px 0; }
+  </style>
+
+  <script define:vars={{ exercises }}>
+    const elCard = document.getElementById('q-card');
+    const elTag = document.getElementById('q-tag');
+    const elText = document.getElementById('q-text');
+    const elOptions = document.getElementById('q-options');
+    const elExplain = document.getElementById('q-explain');
+    const elAction = document.getElementById('q-action');
+    const elResult = document.getElementById('q-result');
+    const elEmpty = document.getElementById('empty-state');
+    const elFill = document.getElementById('progress-fill');
+    const elLabel = document.getElementById('progress-label');
+
+    if (exercises.length === 0) {
+      elEmpty.hidden = false;
+      elEmpty.innerHTML = '<p>Chưa có bài tập nào cho chủ điểm này. Thêm qua /admin — khi tạo câu hỏi, chọn đúng "Bài học Ngữ pháp liên quan" là chủ điểm này.</p>';
+    } else {
+      let current = 0;
+      let score = 0;
+      let answered = false;
+      let picked = null;
+
+      function renderQuestion() {
+        elCard.hidden = false;
+        answered = false;
+        picked = null;
+        const q = exercises[current];
+        elTag.textContent = 'Bài tập ' + (current + 1) + ' / ' + exercises.length;
+        elText.textContent = q.cau_hoi;
+        elOptions.innerHTML = '';
+        q.lua_chon.forEach((opt, i) => {
+          const b = document.createElement('button');
+          b.className = 'option';
+          b.textContent = String.fromCharCode(65 + i) + '. ' + opt;
+          b.addEventListener('click', () => selectOption(i));
+          elOptions.appendChild(b);
+        });
+        elExplain.hidden = true;
+        elAction.textContent = 'Kiểm tra đáp án';
+        elAction.disabled = true;
+        elFill.style.width = (current / exercises.length * 100) + '%';
+        elLabel.textContent = 'Bài tập ' + (current + 1) + ' / ' + exercises.length;
+      }
+
+      function selectOption(i) {
+        if (answered) return;
+        picked = i;
+        [...elOptions.children].forEach((b, idx) => b.classList.toggle('selected', idx === i));
+        elAction.disabled = false;
+      }
+
+      function checkAnswer() {
+        if (answered) { nextQuestion(); return; }
+        answered = true;
+        const q = exercises[current];
+        [...elOptions.children].forEach((b, idx) => {
+          b.classList.remove('selected');
+          if (idx === q.dap_an_dung) b.classList.add('correct');
+          else if (idx === picked) b.classList.add('incorrect');
+        });
+        if (picked === q.dap_an_dung) score++;
+        if (q.giai_thich) {
+          elExplain.textContent = q.giai_thich;
+          elExplain.hidden = false;
+        }
+        elAction.textContent = current === exercises.length - 1 ? 'Xem kết quả' : 'Bài tiếp theo';
+      }
+
+      function nextQuestion() {
+        current++;
+        if (current >= exercises.length) {
+          showResult();
+        } else {
+          renderQuestion();
+        }
+      }
+
+      function updateHeaderBadges(xp, streak) {
+        const el = document.getElementById('header-badges');
+        if (!el) return;
+        el.innerHTML = '<span class="badge">⭐ ' + xp + ' XP</span><span class="badge streak">🔥 ' + streak + ' ngày</span>';
+      }
+
+      function showResult() {
+        elCard.hidden = true;
+        elFill.style.width = '100%';
+        elLabel.textContent = 'Hoàn thành';
+
+        const earnedXp = score * 10;
+        const progress = JSON.parse(localStorage.getItem('luyenthi_progress') || '{"xp":0,"streak":0,"lastDate":null}');
+        const today = new Date().toISOString().slice(0, 10);
+        if (progress.lastDate !== today) {
+          const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+          progress.streak = progress.lastDate === yesterday ? (progress.streak || 0) + 1 : 1;
+          progress.lastDate = today;
+        }
+        progress.xp = (progress.xp || 0) + earnedXp;
+        localStorage.setItem('luyenthi_progress', JSON.stringify(progress));
+        updateHeaderBadges(progress.xp, progress.streak);
+
+        elResult.hidden = false;
+        elResult.innerHTML =
+          '<div class="result-card">' +
+          '<p style="color: var(--ink-soft); margin:0;">Kết quả</p>' +
+          '<p class="score">' + score + ' / ' + exercises.length + '</p>' +
+          '<p style="color: var(--ink-soft);">+' + earnedXp + ' XP · Streak hiện tại: ' + progress.streak + ' ngày</p>' +
+          '<a href="/ngu-phap"><button class="btn-primary">Học chủ điểm khác</button></a>' +
+          '</div>';
+      }
+
+      elAction.addEventListener('click', checkAnswer);
+      renderQuestion();
+    }
+  </script>
+</Layout>

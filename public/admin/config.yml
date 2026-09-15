@@ -7,6 +7,23 @@ media_folder: "public/images/uploads"
 public_folder: "/images/uploads"
 
 collections:
+  - name: "nguphap"
+    label: "Bài học Ngữ pháp"
+    folder: "src/content/nguphap"
+    create: true
+    slug: "{{slug}}"
+    format: "frontmatter"
+    fields:
+      - { label: "Tên chủ điểm (vd: Thì hiện tại hoàn thành)", name: "tieu_de", widget: "string" }
+      - label: "Độ khó"
+        name: "do_kho"
+        widget: "select"
+        options:
+          - { label: "Dễ", value: "de" }
+          - { label: "Trung bình", value: "trungbinh" }
+          - { label: "Khó", value: "kho" }
+      - { label: "Nội dung bài giảng (công thức, cách dùng, ví dụ, lỗi thường gặp)", name: "body", widget: "markdown" }
+
   - name: "baidoc"
     label: "Bài đọc (đoạn văn dài)"
     folder: "src/content/baidoc"
@@ -61,6 +78,14 @@ collections:
         name: "bai_doc"
         widget: "relation"
         collection: "baidoc"
+        search_fields: ["tieu_de"]
+        value_field: "{{slug}}"
+        display_fields: ["tieu_de"]
+        required: false
+      - label: "Bài học Ngữ pháp liên quan (chọn nếu đây là bài tập cho một chủ điểm ngữ pháp)"
+        name: "bai_hoc_ngu_phap"
+        widget: "relation"
+        collection: "nguphap"
         search_fields: ["tieu_de"]
         value_field: "{{slug}}"
         display_fields: ["tieu_de"]

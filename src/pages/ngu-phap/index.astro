@@ -1,0 +1,52 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const rawLessons = await getCollection('nguphap');
+const rawQuestions = await getCollection('cauhoi');
+
+const nhanDoKho = { de: 'Dễ', trungbinh: 'Trung bình', kho: 'Khó' };
+
+const lessons = rawLessons.map(l => ({
+  slug: l.slug,
+  tieu_de: l.data.tieu_de,
+  do_kho: l.data.do_kho,
+  soBaiTap: rawQuestions.filter(q => q.data.bai_hoc_ngu_phap === l.slug).length,
+}));
+---
+<Layout title="Ngữ pháp — Luyện thi IELTS · TOEIC">
+  <section style="padding: 20px 0;">
+    <h1 style="font-size: 1.8rem;">Ngữ pháp</h1>
+    <p style="color: var(--ink-soft); max-width: 52ch;">
+      Chọn một chủ điểm để học quy tắc trước, sau đó làm bài tập luyện riêng cho đúng chủ điểm đó.
+    </p>
+
+    {lessons.length === 0 && (
+      <p style="color: var(--ink-soft);">Chưa có bài học ngữ pháp nào. Thêm qua trang quản trị /admin, mục "Bài học Ngữ pháp".</p>
+    )}
+
+    <div class="lesson-list">
+      {lessons.map(l => (
+        <a href={`/ngu-phap/${l.slug}`} class="lesson-card">
+          <div>
+            <h3 style="margin: 0 0 4px;">{l.tieu_de}</h3>
+            <p style="margin: 0; color: var(--ink-soft); font-size: .85rem;">
+              {l.soBaiTap} bài tập luyện tập
+            </p>
+          </div>
+          <span class="q-tag">{nhanDoKho[l.do_kho]}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <style is:global>
+    .lesson-list { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+    .lesson-card {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px 20px; text-decoration: none; color: var(--ink);
+    }
+    .lesson-card:hover { border-color: var(--ink); }
+  </style>
+</Layout>

@@ -4,12 +4,13 @@ import { getCollection } from 'astro:content';
 
 const allQuestions = await getCollection('cauhoi');
 const allPassages = await getCollection('baidoc');
+const allLessons = await getCollection('nguphap');
 const soCauIelts = allQuestions.filter(q => q.data.de_thi === 'ielts').length;
 const soCauToeic = allQuestions.filter(q => q.data.de_thi === 'toeic').length;
 const soCauReading = allQuestions.filter(q => q.data.ky_nang === 'reading').length;
-const soCauGrammar = allQuestions.filter(q => q.data.ky_nang === 'grammar').length;
 const soCauListening = allQuestions.filter(q => q.data.ky_nang === 'listening').length;
 const soBaiDoc = allPassages.length;
+const soBaiHocNguPhap = allLessons.length;
 ---
 <Layout title="Luyện thi IELTS · TOEIC — Học mỗi ngày, có thưởng">
   <section style="padding: 20px 0 8px;">
@@ -23,7 +24,7 @@ const soBaiDoc = allPassages.length;
       <h3 style="margin: 0 0 4px;">Luyện tập nhanh (câu hỏi rời rạc)</h3>
       <p style="color: var(--ink-soft); font-size: .88rem; margin: 0 0 16px;">
         Từng câu độc lập, không gắn đoạn văn — phù hợp luyện từ vựng/ngữ pháp nhanh (ví dụ TOEIC Part 5).
-        Muốn làm bài đọc dài đúng chuẩn thi thật, dùng mục "Luyện đọc hiểu" bên dưới.
+        Muốn học một chủ điểm ngữ pháp bài bản, dùng mục "Ngữ pháp" bên dưới. Muốn bài đọc dài đúng chuẩn thi thật, dùng mục "Luyện đọc hiểu".
       </p>
       <div class="select-row">
         <label for="sel-de">Đề thi</label>
@@ -38,7 +39,6 @@ const soBaiDoc = allPassages.length;
         <select id="sel-ky">
           <option value="all">Tất cả</option>
           <option value="reading">Reading</option>
-          <option value="grammar">Grammar</option>
           <option value="listening">Listening</option>
         </select>
       </div>
@@ -54,9 +54,18 @@ const soBaiDoc = allPassages.length;
 
     <p style="margin-top: 28px; color: var(--ink-soft); font-size: 0.9rem;">
       Ngân hàng câu hỏi hiện có: {soCauIelts} câu IELTS · {soCauToeic} câu TOEIC
-      &nbsp;—&nbsp; {soCauReading} Reading · {soCauGrammar} Grammar · {soCauListening} Listening.
+      &nbsp;—&nbsp; {soCauReading} Reading · {soCauListening} Listening.
       Đây là bản MVP — số lượng câu hỏi sẽ tăng dần qua CMS quản trị.
     </p>
+
+    <div class="select-card" style="margin-top: 20px;">
+      <h3 style="margin: 0 0 4px;">Ngữ pháp</h3>
+      <p style="color: var(--ink-soft); font-size: .88rem; margin: 0 0 16px;">
+        Học quy tắc từng chủ điểm trước, rồi làm bài tập luyện bám sát đúng chủ điểm đó.
+        Hiện có {soBaiHocNguPhap} chủ điểm.
+      </p>
+      <a href="/ngu-phap"><button class="btn-primary" style="width: 100%;">Xem các chủ điểm</button></a>
+    </div>
 
     <div class="select-card" style="margin-top: 20px;">
       <h3 style="margin: 0 0 4px;">Luyện đọc hiểu (Reading Passage)</h3>

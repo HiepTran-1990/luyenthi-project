@@ -13,6 +13,8 @@ const cauhoi = defineCollection({
     giai_thich: z.string().optional(),
     // Slug của bài đọc liên quan (để trống = câu hỏi độc lập, vd TOEIC Part 5)
     bai_doc: z.string().optional(),
+    // Slug của bài học ngữ pháp liên quan (để trống = không thuộc bài học nào)
+    bai_hoc_ngu_phap: z.string().optional(),
   }),
 });
 
@@ -25,4 +27,12 @@ const baidoc = defineCollection({
   }),
 });
 
-export const collections = { cauhoi, baidoc };
+const nguphap = defineCollection({
+  type: 'content',
+  schema: z.object({
+    tieu_de: z.string(),
+    do_kho: z.enum(['de', 'trungbinh', 'kho']),
+  }),
+});
+
+export const collections = { cauhoi, baidoc, nguphap };

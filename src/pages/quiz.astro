@@ -3,11 +3,11 @@ import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 
 const raw = await getCollection('cauhoi');
-// Loại các câu hỏi thuộc một bài đọc cụ thể (bai_doc có giá trị) ra khỏi
-// pool ngẫu nhiên ở đây — chúng chỉ nên xuất hiện trong /doc-hieu, đi kèm
-// đúng đoạn văn của nó, không thì người làm bài sẽ không có ngữ cảnh để trả lời.
+// Loại câu hỏi thuộc một bài đọc (bai_doc) hoặc một bài học ngữ pháp
+// (bai_hoc_ngu_phap) ra khỏi pool ngẫu nhiên ở đây — chúng chỉ nên xuất
+// hiện đúng nơi có ngữ cảnh: /doc-hieu hoặc /ngu-phap/[chủ điểm].
 const allQuestions = raw
-  .filter(q => !q.data.bai_doc)
+  .filter(q => !q.data.bai_doc && !q.data.bai_hoc_ngu_phap)
   .map(q => ({
     de_thi: q.data.de_thi,
     ky_nang: q.data.ky_nang,
