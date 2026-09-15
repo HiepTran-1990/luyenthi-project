@@ -1,0 +1,270 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const rawListenings = await getCollection('bainghe');
+const rawQuestions = await getCollection('cauhoi');
+
+const listenings = rawListenings.map(l => ({
+  slug: l.slug,
+  de_thi: l.data.de_thi,
+  tieu_de: l.data.tieu_de,
+  do_kho: l.data.do_kho,
+  transcript: l.body || '',
+}));
+
+const linkedQuestions = rawQuestions
+  .filter(q => q.data.bai_nghe)
+  .map(q => ({
+    bai_nghe: q.data.bai_nghe,
+    cau_hoi: q.data.cau_hoi,
+    lua_chon: q.data.lua_chon,
+    dap_an_dung: q.data.dap_an_dung,
+    giai_thich: q.data.giai_thich || '',
+  }));
+---
+<Layout title="Luyện nghe — Luyện thi IELTS · TOEIC">
+  <div id="listening-app">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    <p class="progress-label" id="progress-label"></p>
+
+    <div class="passage-card" id="audio-card" hidden>
+      <span class="q-tag" id="audio-tag"></span>
+      <h2 id="audio-title" style="margin: 8px 0 4px;"></h2>
+      <p style="color: var(--ink-soft); font-size: .88rem; margin: 0 0 18px;">
+        Bấm nghe, có thể phát lại nhiều lần. Nội dung lời thoại sẽ hiện ra sau khi bạn làm xong câu hỏi.
+      </p>
+      <div class="audio-controls">
+        <button class="btn-primary" id="btn-play">▶ Nghe</button>
+        <button class="btn-secondary" id="btn-replay">↻ Phát lại</button>
+        <select id="sel-speed">
+          <option value="0.8">Tốc độ: Chậm</option>
+          <option value="1" selected>Tốc độ: Bình thường</option>
+        </select>
+      </div>
+      <p id="audio-status" style="color: var(--ink-soft); font-size: .82rem; margin-top: 10px;"></p>
+      <p id="audio-unsupported" hidden style="color: var(--red); font-size: .85rem; margin-top: 10px;">
+        Trình duyệt của bạn không hỗ trợ đọc văn bản thành giọng nói. Hãy thử mở bằng Chrome, Edge hoặc Safari bản mới nhất.
+      </p>
+    </div>
+
+    <div class="q-card" id="q-card" hidden style="margin-top: 20px;">
+      <span class="q-tag" id="q-tag"></span>
+      <h3 id="q-text"></h3>
+      <div id="q-options"></div>
+      <p id="q-explain" class="explain" hidden></p>
+      <button class="btn-primary" id="q-action" disabled>Kiểm tra đáp án</button>
+    </div>
+
+    <div id="empty-state" hidden></div>
+    <div id="q-result" hidden></div>
+  </div>
+
+  <style is:global>
+    .progress-track { height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; margin-bottom: 8px; }
+    .progress-fill { height: 100%; background: var(--teal); width: 0%; transition: width .25s ease; }
+    .progress-label { color: var(--ink-soft); font-size: .85rem; margin: 0 0 20px; }
+    .passage-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; }
+    .audio-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .btn-secondary {
+      background: white; color: var(--ink); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 18px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 1rem;
+    }
+    .btn-secondary:hover { border-color: var(--ink); }
+    #sel-speed { padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-family: inherit; background: white; color: var(--ink); }
+    .transcript-box { background: var(--gold-soft); border-radius: var(--radius); padding: 16px 18px; margin-top: 16px; font-size: .92rem; line-height: 1.7; color: #5C4813; text-align: left; }
+    .q-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; }
+    .q-tag { display: inline-block; background: var(--gold-soft); color: #8A6412; font-size: .75rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+    #q-text { font-size: 1.1rem; margin: 14px 0 20px; }
+    .option {
+      display: block; width: 100%; text-align: left;
+      background: white; border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 13px 16px; margin-bottom: 10px; font-size: .98rem; font-family: inherit;
+      cursor: pointer; color: var(--ink);
+    }
+    .option:hover { border-color: var(--ink); }
+    .option.selected { border-color: var(--ink); border-width: 2px; }
+    .option.correct { background: var(--teal-soft); border-color: var(--teal); }
+    .option.incorrect { background: var(--red-soft); border-color: var(--red); }
+    .explain { background: var(--gold-soft); border-radius: var(--radius); padding: 14px 16px; font-size: .92rem; margin: 10px 0 18px; color: #5C4813; }
+    .result-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; text-align: center; }
+    .result-card .score { font-family: 'Literata', serif; font-size: 2.4rem; margin: 6px 0; }
+  </style>
+
+  <script define:vars={{ listenings, linkedQuestions }}>
+    const params = new URLSearchParams(window.location.search);
+    const filterDeThi = params.get('de') || 'all';
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    const eligible = listenings.filter(l => {
+      const matchDeThi = filterDeThi === 'all' || l.de_thi === filterDeThi;
+      const hasQuestions = linkedQuestions.some(q => q.bai_nghe === l.slug);
+      return matchDeThi && hasQuestions;
+    });
+
+    const elAudioCard = document.getElementById('audio-card');
+    const elAudioTag = document.getElementById('audio-tag');
+    const elAudioTitle = document.getElementById('audio-title');
+    const elAudioStatus = document.getElementById('audio-status');
+    const elAudioUnsupported = document.getElementById('audio-unsupported');
+    const elBtnPlay = document.getElementById('btn-play');
+    const elBtnReplay = document.getElementById('btn-replay');
+    const elSelSpeed = document.getElementById('sel-speed');
+    const elCard = document.getElementById('q-card');
+    const elTag = document.getElementById('q-tag');
+    const elText = document.getElementById('q-text');
+    const elOptions = document.getElementById('q-options');
+    const elExplain = document.getElementById('q-explain');
+    const elAction = document.getElementById('q-action');
+    const elResult = document.getElementById('q-result');
+    const elEmpty = document.getElementById('empty-state');
+    const elFill = document.getElementById('progress-fill');
+    const elLabel = document.getElementById('progress-label');
+
+    if (eligible.length === 0) {
+      elEmpty.hidden = false;
+      elEmpty.innerHTML = '<p>Chưa có bài nghe nào phù hợp với bộ lọc này. Hãy thử bộ lọc khác, hoặc thêm bài nghe + câu hỏi qua trang quản trị /admin (mục "Bài nghe" và "Ngân hàng câu hỏi").</p>';
+    } else {
+      const listening = eligible[Math.floor(Math.random() * eligible.length)];
+      const questions = linkedQuestions.filter(q => q.bai_nghe === listening.slug);
+
+      elAudioCard.hidden = false;
+      elAudioTag.textContent = (listening.de_thi === 'ielts' ? 'IELTS' : 'TOEIC') + ' · Listening';
+      elAudioTitle.textContent = listening.tieu_de;
+
+      const supportsSpeech = 'speechSynthesis' in window;
+      if (!supportsSpeech) {
+        elAudioUnsupported.hidden = false;
+        elBtnPlay.disabled = true;
+        elBtnReplay.disabled = true;
+      }
+
+      function playAudio() {
+        if (!supportsSpeech) return;
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(listening.transcript);
+        utter.lang = 'en-US';
+        utter.rate = parseFloat(elSelSpeed.value);
+        utter.onstart = () => { elAudioStatus.textContent = 'Đang phát...'; };
+        utter.onend = () => { elAudioStatus.textContent = 'Đã phát xong. Bấm "Phát lại" nếu muốn nghe lại.'; };
+        window.speechSynthesis.speak(utter);
+      }
+      elBtnPlay.addEventListener('click', playAudio);
+      elBtnReplay.addEventListener('click', playAudio);
+
+      let current = 0;
+      let score = 0;
+      let answered = false;
+      let picked = null;
+
+      function renderQuestion() {
+        elCard.hidden = false;
+        answered = false;
+        picked = null;
+        const q = questions[current];
+        elTag.textContent = 'Câu ' + (current + 1) + ' / ' + questions.length;
+        elText.textContent = q.cau_hoi;
+        elOptions.innerHTML = '';
+        q.lua_chon.forEach((opt, i) => {
+          const b = document.createElement('button');
+          b.className = 'option';
+          b.textContent = String.fromCharCode(65 + i) + '. ' + opt;
+          b.addEventListener('click', () => selectOption(i));
+          elOptions.appendChild(b);
+        });
+        elExplain.hidden = true;
+        elAction.textContent = 'Kiểm tra đáp án';
+        elAction.disabled = true;
+        elFill.style.width = (current / questions.length * 100) + '%';
+        elLabel.textContent = 'Câu hỏi ' + (current + 1) + ' / ' + questions.length;
+      }
+
+      function selectOption(i) {
+        if (answered) return;
+        picked = i;
+        [...elOptions.children].forEach((b, idx) => b.classList.toggle('selected', idx === i));
+        elAction.disabled = false;
+      }
+
+      function checkAnswer() {
+        if (answered) { nextQuestion(); return; }
+        answered = true;
+        const q = questions[current];
+        [...elOptions.children].forEach((b, idx) => {
+          b.classList.remove('selected');
+          if (idx === q.dap_an_dung) b.classList.add('correct');
+          else if (idx === picked) b.classList.add('incorrect');
+        });
+        if (picked === q.dap_an_dung) score++;
+        if (q.giai_thich) {
+          elExplain.textContent = q.giai_thich;
+          elExplain.hidden = false;
+        }
+        elAction.textContent = current === questions.length - 1 ? 'Xem kết quả' : 'Câu tiếp theo';
+      }
+
+      function nextQuestion() {
+        current++;
+        if (current >= questions.length) {
+          showResult();
+        } else {
+          renderQuestion();
+        }
+      }
+
+      function updateHeaderBadges(xp, streak) {
+        const el = document.getElementById('header-badges');
+        if (!el) return;
+        el.innerHTML = '<span class="badge">⭐ ' + xp + ' XP</span><span class="badge streak">🔥 ' + streak + ' ngày</span>';
+      }
+
+      function showResult() {
+        elAudioCard.hidden = true;
+        elCard.hidden = true;
+        elFill.style.width = '100%';
+        elLabel.textContent = 'Hoàn thành';
+        window.speechSynthesis.cancel();
+
+        const earnedXp = score * 10;
+        const progress = JSON.parse(localStorage.getItem('luyenthi_progress') || '{"xp":0,"streak":0,"lastDate":null}');
+        const today = new Date().toISOString().slice(0, 10);
+        if (progress.lastDate !== today) {
+          const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+          progress.streak = progress.lastDate === yesterday ? (progress.streak || 0) + 1 : 1;
+          progress.lastDate = today;
+        }
+        progress.xp = (progress.xp || 0) + earnedXp;
+        localStorage.setItem('luyenthi_progress', JSON.stringify(progress));
+        updateHeaderBadges(progress.xp, progress.streak);
+
+        const transcriptHtml = listening.transcript
+          .split(/\n\s*\n/)
+          .map(p => '<p>' + escapeHtml(p.trim()) + '</p>')
+          .join('');
+
+        elResult.hidden = false;
+        elResult.innerHTML =
+          '<div class="result-card">' +
+          '<p style="color: var(--ink-soft); margin:0;">Kết quả</p>' +
+          '<p class="score">' + score + ' / ' + questions.length + '</p>' +
+          '<p style="color: var(--ink-soft);">+' + earnedXp + ' XP · Streak hiện tại: ' + progress.streak + ' ngày</p>' +
+          '<button class="btn-secondary" id="btn-show-transcript">Xem lời thoại (transcript)</button>' +
+          '<div class="transcript-box" id="transcript-box" hidden>' + transcriptHtml + '</div>' +
+          '<div style="margin-top: 16px;"><button class="btn-primary" onclick="location.reload()">Nghe bài khác</button></div>' +
+          '</div>';
+
+        document.getElementById('btn-show-transcript').addEventListener('click', () => {
+          document.getElementById('transcript-box').hidden = false;
+        });
+      }
+
+      elAction.addEventListener('click', checkAnswer);
+      renderQuestion();
+    }
+  </script>
+</Layout>

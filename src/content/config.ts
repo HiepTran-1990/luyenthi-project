@@ -15,6 +15,8 @@ const cauhoi = defineCollection({
     bai_doc: z.string().optional(),
     // Slug của bài học ngữ pháp liên quan (để trống = không thuộc bài học nào)
     bai_hoc_ngu_phap: z.string().optional(),
+    // Slug của bài nghe liên quan (để trống = không thuộc bài nghe nào)
+    bai_nghe: z.string().optional(),
   }),
 });
 
@@ -35,4 +37,13 @@ const nguphap = defineCollection({
   }),
 });
 
-export const collections = { cauhoi, baidoc, nguphap };
+const bainghe = defineCollection({
+  type: 'content',
+  schema: z.object({
+    de_thi: z.enum(['ielts', 'toeic']),
+    tieu_de: z.string(),
+    do_kho: z.enum(['de', 'trungbinh', 'kho']),
+  }),
+});
+
+export const collections = { cauhoi, baidoc, nguphap, bainghe };

@@ -5,12 +5,13 @@ import { getCollection } from 'astro:content';
 const allQuestions = await getCollection('cauhoi');
 const allPassages = await getCollection('baidoc');
 const allLessons = await getCollection('nguphap');
+const allListenings = await getCollection('bainghe');
 const soCauIelts = allQuestions.filter(q => q.data.de_thi === 'ielts').length;
 const soCauToeic = allQuestions.filter(q => q.data.de_thi === 'toeic').length;
 const soCauReading = allQuestions.filter(q => q.data.ky_nang === 'reading').length;
-const soCauListening = allQuestions.filter(q => q.data.ky_nang === 'listening').length;
 const soBaiDoc = allPassages.length;
 const soBaiHocNguPhap = allLessons.length;
+const soBaiNghe = allListenings.length;
 ---
 <Layout title="Luyện thi IELTS · TOEIC — Học mỗi ngày, có thưởng">
   <section style="padding: 20px 0 8px;">
@@ -24,7 +25,8 @@ const soBaiHocNguPhap = allLessons.length;
       <h3 style="margin: 0 0 4px;">Luyện tập nhanh (câu hỏi rời rạc)</h3>
       <p style="color: var(--ink-soft); font-size: .88rem; margin: 0 0 16px;">
         Từng câu độc lập, không gắn đoạn văn — phù hợp luyện từ vựng/ngữ pháp nhanh (ví dụ TOEIC Part 5).
-        Muốn học một chủ điểm ngữ pháp bài bản, dùng mục "Ngữ pháp" bên dưới. Muốn bài đọc dài đúng chuẩn thi thật, dùng mục "Luyện đọc hiểu".
+        Muốn học một chủ điểm ngữ pháp bài bản, dùng mục "Ngữ pháp"; muốn bài đọc dài, dùng "Luyện đọc hiểu";
+        muốn luyện nghe, dùng "Luyện nghe" bên dưới.
       </p>
       <div class="select-row">
         <label for="sel-de">Đề thi</label>
@@ -39,7 +41,6 @@ const soBaiHocNguPhap = allLessons.length;
         <select id="sel-ky">
           <option value="all">Tất cả</option>
           <option value="reading">Reading</option>
-          <option value="listening">Listening</option>
         </select>
       </div>
       <div class="select-row">
@@ -54,7 +55,7 @@ const soBaiHocNguPhap = allLessons.length;
 
     <p style="margin-top: 28px; color: var(--ink-soft); font-size: 0.9rem;">
       Ngân hàng câu hỏi hiện có: {soCauIelts} câu IELTS · {soCauToeic} câu TOEIC
-      &nbsp;—&nbsp; {soCauReading} Reading · {soCauListening} Listening.
+      &nbsp;—&nbsp; {soCauReading} Reading.
       Đây là bản MVP — số lượng câu hỏi sẽ tăng dần qua CMS quản trị.
     </p>
 
@@ -82,6 +83,23 @@ const soBaiHocNguPhap = allLessons.length;
         </select>
       </div>
       <button class="btn-primary" id="btn-start-doc" style="width: 100%; margin-top: 4px;">Đọc và trả lời</button>
+    </div>
+
+    <div class="select-card" style="margin-top: 20px;">
+      <h3 style="margin: 0 0 4px;">Luyện nghe (Listening)</h3>
+      <p style="color: var(--ink-soft); font-size: .88rem; margin: 0 0 16px;">
+        Nghe một đoạn hội thoại/bài nói (trình duyệt đọc to bằng giọng máy), trả lời câu hỏi gắn theo.
+        Hiện có {soBaiNghe} bài nghe.
+      </p>
+      <div class="select-row">
+        <label for="sel-de-nghe">Đề thi</label>
+        <select id="sel-de-nghe">
+          <option value="all">Tất cả</option>
+          <option value="ielts">IELTS</option>
+          <option value="toeic">TOEIC</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="btn-start-nghe" style="width: 100%; margin-top: 4px;">Nghe và trả lời</button>
     </div>
   </section>
 
@@ -123,6 +141,11 @@ const soBaiHocNguPhap = allLessons.length;
     document.getElementById('btn-start-doc').addEventListener('click', () => {
       const de = document.getElementById('sel-de-doc').value;
       window.location.href = `/doc-hieu?de=${de}`;
+    });
+
+    document.getElementById('btn-start-nghe').addEventListener('click', () => {
+      const de = document.getElementById('sel-de-nghe').value;
+      window.location.href = `/nghe?de=${de}`;
     });
   </script>
 </Layout>
